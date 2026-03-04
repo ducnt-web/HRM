@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "playwright-mcp": {
+      "type": "stdio",
+      "command": "npm",
+      "args": ["run", "mcp"]
+    }
+  }
+}
