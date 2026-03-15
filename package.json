@@ -8,25 +8,27 @@
     "test:report": "playwright test && playwright show-report",
     "test:hrm": "playwright test tests/hrm-*.spec.ts",
     "test:hrm:report": "playwright test tests/hrm-*.spec.ts && playwright show-report",
-    "test:workflow": "playwright test tests/hrm-login-workflow.spec.ts",
+    "test:workflow": "playwright test tests/hrm-login-workflow.spec.ts --config=./playwright.config.ts",
     "test:workflow:report": "playwright test tests/hrm-login-workflow.spec.ts && playwright show-report",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
+    "select:test": "node select-test.js",
     "report": "playwright show-report",
     "mcp": "ts-node src/mcp-server.ts",
     "build:mcp": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "playwright": "^1.0.0",
     "@modelcontextprotocol/sdk": "^1.27.1",
-    "zod": "^4.0.0",
-    "dotenv": "^16.0.0"
+    "dotenv": "^16.0.0",
+    "playwright": "^1.0.0",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
-    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "inquirer": "^8.2.7",
     "ts-node": "^10.0.0",
-    "@types/node": "^20.0.0"
+    "typescript": "^5.0.0"
   },
   "author": "",
   "license": "ISC"

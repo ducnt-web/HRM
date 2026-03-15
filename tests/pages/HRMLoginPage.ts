@@ -11,9 +11,9 @@ export class HRMLoginPage {
   constructor(page: Page) {
     this.page = page;
     // Do not cache locators that may not exist; resolve at use time instead
-    this.usernameInput = page.locator('input[type="email"], input[type="text"]');
+    this.usernameInput = page.locator('input[placeholder="Enter your email here"]');
     this.passwordInput = page.locator('input[type="password"]');
-    this.loginButton = page.locator('button[type="submit"], button:has-text("Login"), button:has-text("Sign In")');
+    this.loginButton = page.locator('button[type="submit"]');
   }
 
   /**
@@ -21,7 +21,9 @@ export class HRMLoginPage {
    */
   async goto() {
     try {
+      
       await this.page.goto(this.baseURL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await this.page.waitForTimeout(1000);
     } catch (error) {
       throw new Error(`Failed to navigate to ${this.baseURL}: ${error}`);
     }
@@ -127,6 +129,13 @@ export class HRMLoginPage {
     for (const sel of altSelectors) {
       const elem = this.page.locator(sel).first();
       if (await elem.isVisible().catch(() => false)) {
+        // Special check for "Sign In" to avoid "Sign In with Microsoft" or "Sign in with Google"
+        if (sel === 'button:has-text("Sign In")') {
+          const text = await elem.textContent();
+          if (text && (text.trim() !== 'Sign In' || text.includes('with'))) {
+            continue; // skip if not exactly "Sign In" or contains "with"
+          }
+        }
         await elem.click();
         return;
       }
@@ -141,8 +150,11 @@ export class HRMLoginPage {
   async login(username: string, password: string) {
     await this.goto();
     await this.enterUsername(username);
+    await this.page.waitForTimeout(1000); // Pause 5 seconds after filling username
     await this.enterPassword(password);
+    await this.page.waitForTimeout(1000); // Pause 5 seconds after filling password
     await this.clickLogin();
+    await this.page.waitForTimeout(500);
     // Wait for navigation after login - allow to timeout gracefully
     await this.page.waitForLoadState('networkidle').catch(() => {
       console.warn('Post-login page did not reach networkidle');
@@ -154,15 +166,16 @@ export class HRMLoginPage {
    */
   async isLoginSuccessful(): Promise<boolean> {
     const successIndicators = [
-      'text=Dashboard',
-      'text=Welcome',
-      'text=Home',
+      'text=Welcome to HRM!',
+      'text=Calendar',
+      'text=Account Management',
+      'text=Employee',
       'button:has-text("Logout")',
       'text=Profile'
     ];
-
+    await this.page.waitForTimeout(1000);
     for (const indicator of successIndicators) {
-      if (await this.page.locator(indicator).isVisible({ timeout: 5000 }).catch(() => false)) {
+      if (await this.page.locator(indicator).isVisible({ timeout: 10000 }).catch(() => false)) {
         return true;
       }
     }
@@ -185,6 +198,28 @@ export class HRMLoginPage {
     } catch {
       return '';
     }
+  }
+
+  /**
+   * Perform logout by clicking user profile icon and then logout button
+   */
+  async logout() {
+    // Step 5: Click the user profile icon in the top right corner
+    console.log('Performing action: click the user profile icon in the top right corner');
+    const profileIcon = this.page.locator('xpath=/html[1]/body[1]/div[1]/div[1]/div[1]/div[2]/div[2]/div[1]/div[1]/img[1]');
+    await profileIcon.waitFor({ state: 'visible', timeout: 5000 });
+    await profileIcon.click();
+
+    // Step 6: Click the Logout button
+    console.log('Performing action: click the Logout button');
+    const logoutButton = this.page.locator('xpath=/html[1]/body[1]/div[1]/div[1]/div[1]/div[2]/div[2]/div[2]/div[5]/p[1]');
+    await logoutButton.waitFor({ state: 'visible', timeout: 5000 });
+    await logoutButton.click();
+
+    // Wait for navigation back to login page
+    await this.page.waitForLoadState('networkidle').catch(() => {
+      console.warn('Post-logout page did not reach networkidle');
+    });
   }
 }
 
